@@ -1,4 +1,4 @@
-package project;
+package YouDo;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -74,17 +74,17 @@ public class User {
     }
 
     // Method to remove a task from the user's task list by task name
-    public void deleteTask(String taskName) {
+    public void deleteTask(Long taskId) {
         Iterator<Task> iterator = this.tasks.iterator();
         while (iterator.hasNext()) {
             Task task = iterator.next();
-            if (task.getName().equals(taskName)) {
+            if (task.getId() == taskId) {
                 iterator.remove();
-                System.out.println("Task '" + taskName + "' deleted.");
+                System.out.println("Task '" + taskId + "' deleted.");
                 return; // Stop after deleting the first matching task
             }
         }
-        System.out.println("Task '" + taskName + "' not found.");
+        System.out.println("Task '" + taskId + "' not found.");
     }
 
     public void saveTasksToFile(String fileName) {

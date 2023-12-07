@@ -1,4 +1,4 @@
-package project;
+package YouDo;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -25,13 +25,13 @@ public class Task {
     }
 
     // new task constructor
-    public Task(String name, String description, String priority, Date dueDate, String status) {
+    public Task(String name, String description, String priority, Date dueDate) {
         this.id = getNextTaskId();
         this.name = name;
         this.description = description;
         this.priority = priority;
         this.dueDate = dueDate;
-        this.status = status;
+        this.status = "Not Started";
         this.creationDate = new Date(); // Set creation date to current date
         // completionDate is not set initially; you can set it when the task is completed
     }
@@ -48,7 +48,7 @@ public class Task {
         // completionDate is not set initially; you can set it when the task is completed
     }
 
-    private static final String TASK_ID_FILE = "project\\taskId.txt";
+    private static final String TASK_ID_FILE = "YouDo\\taskId.txt";
 
     // Load the last assigned task ID from a file
     private static long loadLastTaskId() {
