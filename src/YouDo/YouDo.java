@@ -1,8 +1,8 @@
-package YouDo;
+package src.YouDo;
 
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -11,6 +11,24 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
+
+import javax.swing.JButton;
+import javax.swing.JFormattedTextField;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.table.DefaultTableModel;
+
+// import org.jdatepicker.JDatePicker;
+import org.jdatepicker.impl.JDatePanelImpl;
+import org.jdatepicker.impl.JDatePickerImpl;
+import org.jdatepicker.impl.UtilDateModel;
 
 public class YouDo {
     private static User currentUser;
@@ -42,11 +60,11 @@ public class YouDo {
 
         // project\tasks.txt
         // Load tasks from file on startup
-        loadTasksFromFile(currentUser, "YouDo\\tasks.txt");
+        loadTasksFromFile(currentUser, "src\\YouDo\\tasks.txt");
 
         // Save tasks to file on program exit
         Runtime.getRuntime().addShutdownHook(new Thread(() ->
-                saveTasksToFile(currentUser, "YouDo\\tasks.txt")
+                saveTasksToFile(currentUser, "src\\YouDo\\tasks.txt")
         ));
 
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -72,41 +90,45 @@ public class YouDo {
     }
 
     private static JPanel createTaskInputPanel() {
-        JPanel taskInputPanel = new JPanel(new GridLayout(6, 2));
+        JPanel taskInputPanel = new JPanel(new GridLayout(7, 2)); // Increased rows for the new component
         JLabel taskLabel = new JLabel("Enter your task here:");
         JTextField taskField = new JTextField(20);
         JLabel priorityLabel = new JLabel("Enter Priority:");
         JTextField priorityField = new JTextField(20);
         JLabel descriptionLabel = new JLabel("Enter Description:");
         JTextField descriptionField = new JTextField(20);
-        JLabel dueDateLabel = new JLabel("Enter Due Date (yyyy-MM-dd HH:mm:ss):");
-        JTextField dueDateField = new JTextField(20);
+    
+        // Add JDatePicker for Due Date
+        JLabel dueDateLabel = new JLabel("Select Due Date:");
+        UtilDateModel model = new UtilDateModel();
+        Properties properties = new Properties();
+        JDatePanelImpl datePanel = new JDatePanelImpl(model, properties);
+        JDatePickerImpl datePicker = new JDatePickerImpl(datePanel, new DateLabelFormatter());
+    
         JButton submitButton = new JButton("Submit");
-
+    
         submitButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 String taskName = taskField.getText();
                 String taskPriority = priorityField.getText();
                 String taskDescription = descriptionField.getText();
-                String dueDateString = dueDateField.getText();
-
-                try {
-                    Date dueDate = parseDate(dueDateString);
-                    Task newTask = new Task(taskName, taskDescription, taskPriority, dueDate);
-                    currentUser.addTask(newTask);
-                    updateDisplayArea(currentUser);
-
-                    // Reset input fields
-                    taskField.setText("");
-                    priorityField.setText("");
-                    descriptionField.setText("");
-                    dueDateField.setText("");
-                } catch (ParseException ex) {
-                    JOptionPane.showMessageDialog(null, "Error parsing date. Please enter a valid date format.");
-                }
+    
+                // Retrieve the selected due date from JDatePicker
+                Date dueDate = (Date) datePicker.getModel().getValue();
+    
+                // Continue with task creation
+                Task newTask = new Task(taskName, taskDescription, taskPriority, dueDate);
+                currentUser.addTask(newTask);
+                updateDisplayArea(currentUser);
+    
+                // Reset input fields
+                taskField.setText("");
+                priorityField.setText("");
+                descriptionField.setText("");
+                datePicker.getModel().setValue(null); // Reset the JDatePicker
             }
         });
-
+    
         taskInputPanel.add(taskLabel);
         taskInputPanel.add(taskField);
         taskInputPanel.add(priorityLabel);
@@ -114,12 +136,13 @@ public class YouDo {
         taskInputPanel.add(descriptionLabel);
         taskInputPanel.add(descriptionField);
         taskInputPanel.add(dueDateLabel);
-        taskInputPanel.add(dueDateField);
-        taskInputPanel.add(new JPanel());  // Empty panel for spacing
+        taskInputPanel.add(datePicker);  // Directly add the JDatePicker without wrapping in a panel
+        taskInputPanel.add(new JPanel()); // Empty panel for spacing
         taskInputPanel.add(submitButton);
-
+    
         return taskInputPanel;
     }
+    
 
     private static JPanel createDisplayPanel() {
         JPanel displayPanel = new JPanel(new BorderLayout());
@@ -159,24 +182,11 @@ public class YouDo {
         for (int i = 0; i < tasks.size(); i++) {
             Task task = tasks.get(i);
 
-            Object[] rowData = {
-                    i + 1,
-                    task.getId(),
-                    task.getName(),
-                    task.getDescription(),
-                    task.getPriority(),
-                    task.getDueDate(),
-                    task.getStatus(),
-                    task.getCreationDate()
-            };
+            Object[] rowData = { i + 1, task.getId(), task.getName(), task.getDescription(), task.getPriority(),
+                    task.getDueDate(), task.getStatus(), task.getCreationDate() };
 
             tableModel.addRow(rowData);
         }
-    }
-
-    private static Date parseDate(String dateString) throws ParseException {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        return dateFormat.parse(dateString);
     }
 
     private static class TableRightClickListener extends MouseAdapter {
@@ -258,4 +268,24 @@ public class YouDo {
             return popup;
         }
     }
+
+    // Custom DateLabelFormatter to format the date in the JDatePicker
+    private static class DateLabelFormatter extends JFormattedTextField.AbstractFormatter {
+        private String datePattern = "yyyy-MM-dd";
+        private SimpleDateFormat dateFormatter = new SimpleDateFormat(datePattern);
+
+        @Override
+        public Object stringToValue(String text) throws ParseException {
+            return dateFormatter.parseObject(text);
+        }
+
+        @Override
+        public String valueToString(Object value) throws ParseException {
+            if (value != null && value instanceof Date) {
+                return dateFormatter.format(value);
+            }
+            return "";
+        }
+    }
+
 }

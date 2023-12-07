@@ -1,4 +1,4 @@
-package YouDo;
+package src.YouDo;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -48,7 +48,7 @@ public class Task {
         // completionDate is not set initially; you can set it when the task is completed
     }
 
-    private static final String TASK_ID_FILE = "YouDo\\taskId.txt";
+    private static final String TASK_ID_FILE = "src\\YouDo\\taskId.txt";
 
     // Load the last assigned task ID from a file
     private static long loadLastTaskId() {

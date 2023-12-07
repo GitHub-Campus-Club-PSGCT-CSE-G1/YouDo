@@ -1,0 +1,6 @@
+{
+    "java.classpath": [
+      "lib/JDatePicker-1.3.4.jar"  // Adjust the path accordingly
+    ]
+}
+  
