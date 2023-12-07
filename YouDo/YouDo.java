@@ -2,10 +2,11 @@ package YouDo;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -124,31 +125,17 @@ public class YouDo {
         JPanel displayPanel = new JPanel(new BorderLayout());
 
         // Table headers and initial data
-        String[] columnNames = {"S.No", "ID", "Name", "Description", "Priority", "Due Date", "Status", "Creation Date", "Delete", "Completed", "Start"};
+        String[] columnNames = {"S.No", "ID", "Name", "Description", "Priority", "Due Date", "Status", "Creation Date"};
         Object[][] data = {};
 
         // Create a DefaultTableModel with data and column names
-        tableModel = new DefaultTableModel(data, columnNames) {
-            @Override
-            public Class<?> getColumnClass(int columnIndex) {
-                return columnIndex >= 8 ? JButton.class : super.getColumnClass(columnIndex);
-            }
-
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return column >= 8;  // Set buttons as editable
-            }
-        };
+        tableModel = new DefaultTableModel(data, columnNames);
 
         table = new JTable(tableModel);
-        table.getColumn("Delete").setCellRenderer(new ButtonRenderer());
-        table.getColumn("Delete").setCellEditor(new ButtonEditor(table, new JCheckBox()));
-        table.getColumn("Completed").setCellRenderer(new ButtonRenderer());
-        table.getColumn("Completed").setCellEditor(new ButtonEditor(table, new JCheckBox()));
-        table.getColumn("Start").setCellRenderer(new ButtonRenderer());
-        table.getColumn("Start").setCellEditor(new ButtonEditor(table, new JCheckBox()));
-
         JScrollPane scrollPane = new JScrollPane(table);
+
+        // Add a right-click listener to the table
+        table.addMouseListener(new TableRightClickListener());
 
         JButton refreshButton = new JButton("Refresh");
         refreshButton.addActionListener(new ActionListener() {
@@ -163,131 +150,15 @@ public class YouDo {
         return displayPanel;
     }
 
-    public static class ButtonRenderer extends JButton implements TableCellRenderer {
-        public ButtonRenderer() {
-            setOpaque(true);
-        }
-
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value,
-                                                       boolean isSelected, boolean hasFocus, int row, int column) {
-            if (isSelected) {
-                setForeground(table.getSelectionForeground());
-                setBackground(table.getSelectionBackground());
-            } else {
-                setForeground(table.getForeground());
-                setBackground(table.getBackground());
-            }
-            setText((value == null) ? "" : value.toString());
-            return this;
-        }
-    }
-
-    private static class ButtonEditor extends DefaultCellEditor {
-        private JTable table;
-        protected JButton button;
-        private String label;
-        private boolean isPushed;
-
-        // Constructor to receive the JTable instance
-        public ButtonEditor(JTable table, JCheckBox checkBox) {
-            super(checkBox);
-            this.table = table;  // Store the reference to the JTable
-            button = new JButton();
-            button.setOpaque(true);
-            button.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    fireEditingStopped();
-                }
-            });
-        }
-
-        @Override
-        public Component getTableCellEditorComponent(JTable table, Object value,
-                                                     boolean isSelected, int row, int column) {
-            if (isSelected) {
-                button.setForeground(table.getSelectionForeground());
-                button.setBackground(table.getSelectionBackground());
-            } else {
-                button.setForeground(table.getForeground());
-                button.setBackground(table.getBackground());
-            }
-            label = (value == null) ? "" : value.toString();
-            button.setText(label);
-            isPushed = true;
-            return button;
-        }
-
-        @Override
-        public Object getCellEditorValue() {
-            if (isPushed) {
-                // Perform the action based on the button clicked
-                handleButtonClick(label, table.getSelectedRow());
-            }
-            isPushed = false;
-            return label;
-        }
-
-        @Override
-        public boolean stopCellEditing() {
-            isPushed = false;
-            return true;
-        }
-
-        // Custom method to handle button click actions
-        private static void handleButtonClick(String buttonText, int selectedRow) {
-            Task task = tasks.get(selectedRow);
-            switch (buttonText) {
-                case "Delete":
-                    currentUser.deleteTask(task.getId());
-                    break;
-                case "Mark as Complete":
-                    task.setStatus("Completed");
-                    task.setCompletionDate(new Date());
-                    break;
-                case "Start":
-                    task.setStatus("Started");
-                    break;
-            }
-            updateDisplayArea(currentUser);
-        }
-
-    }
-
     private static void updateDisplayArea(User user) {
         tasks = user.getTasks();
-    
+
         // Clear the existing data in the table
         tableModel.setRowCount(0);
-        
-        int i = 0;
-        for (Task task : tasks) {
-            // Task task = tasks.get(i);
-            JButton deleteButton = new StyledButton("Delete");
-            deleteButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    ButtonEditor.handleButtonClick("Delete", i); // Use 'i' instead of table.getSelectedRow()
-                }
-            });
-    
-            JButton completeButton = new StyledButton("Mark as Complete");
-            completeButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    ButtonEditor.handleButtonClick("Mark as Complete", i); // Use 'i' instead of table.getSelectedRow()
-                }
-            });
-    
-            JButton startButton = new StyledButton("Start");
-            startButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    ButtonEditor.handleButtonClick("Start", i); // Use 'i' instead of table.getSelectedRow()
-                }
-            });
-    
+
+        for (int i = 0; i < tasks.size(); i++) {
+            Task task = tasks.get(i);
+
             Object[] rowData = {
                     i + 1,
                     task.getId(),
@@ -296,12 +167,9 @@ public class YouDo {
                     task.getPriority(),
                     task.getDueDate(),
                     task.getStatus(),
-                    task.getCreationDate(),
-                    deleteButton,
-                    completeButton,
-                    startButton
+                    task.getCreationDate()
             };
-    
+
             tableModel.addRow(rowData);
         }
     }
@@ -310,21 +178,84 @@ public class YouDo {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         return dateFormat.parse(dateString);
     }
-}
 
-class StyledButton extends JButton {
+    private static class TableRightClickListener extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (e.isPopupTrigger()) {
+                showPopup(e);
+            }
+        }
 
-    public StyledButton(String text) {
-        super(text);
-        initButton();
-    }
+        @Override
+        public void mouseReleased(MouseEvent e) {
+            if (e.isPopupTrigger()) {
+                showPopup(e);
+            }
+        }
 
-    private void initButton() {
-        // Set desired style properties
-        setBackground(Color.BLUE);
-        setForeground(Color.WHITE);
-        setFont(new Font("Arial", Font.BOLD, 14));
-        setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        private void showPopup(MouseEvent e) {
+            int row = table.rowAtPoint(e.getPoint());
+            int column = table.columnAtPoint(e.getPoint());
+
+            if (row >= 0 && row < table.getRowCount() && column >= 0 && column < table.getColumnCount()) {
+                table.setRowSelectionInterval(row, row);
+
+                JPopupMenu popup = createPopupMenu();
+                popup.show(e.getComponent(), e.getX(), e.getY());
+            }
+        }
+
+        private JPopupMenu createPopupMenu() {
+            JPopupMenu popup = new JPopupMenu();
+
+            JMenuItem deleteItem = new JMenuItem("Delete");
+            deleteItem.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // Implement delete functionality here
+                    int selectedRow = table.getSelectedRow();
+                    if (selectedRow >= 0 && selectedRow < tasks.size()) {
+                        currentUser.deleteTask(tasks.get(selectedRow).getId());
+                        updateDisplayArea(currentUser);
+                    }
+                }
+            });
+
+            JMenuItem completeItem = new JMenuItem("Mark as Complete");
+            completeItem.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // Implement mark as completed functionality here
+                    int selectedRow = table.getSelectedRow();
+                    if (selectedRow >= 0 && selectedRow < tasks.size()) {
+                        Task task = tasks.get(selectedRow);
+                        task.setStatus("Completed");
+                        task.setCompletionDate(new Date());
+                        updateDisplayArea(currentUser);
+                    }
+                }
+            });
+
+            JMenuItem startItem = new JMenuItem("Start");
+            startItem.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // Implement started functionality here
+                    int selectedRow = table.getSelectedRow();
+                    if (selectedRow >= 0 && selectedRow < tasks.size()) {
+                        Task task = tasks.get(selectedRow);
+                        task.setStatus("Started");
+                        updateDisplayArea(currentUser);
+                    }
+                }
+            });
+
+            popup.add(deleteItem);
+            popup.add(completeItem);
+            popup.add(startItem);
+
+            return popup;
+        }
     }
 }
