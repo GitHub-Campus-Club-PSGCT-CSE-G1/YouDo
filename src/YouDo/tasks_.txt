@@ -1,0 +1,8 @@
+4|make kishore memes|make and share memes of kishore|1|2023-12-07 12:12:10|Completed|2023-12-06 19:46:44
+5|Presentation|Very important presentation|4|2029-06-14 14:37:36|Completed|2023-12-07 09:33:37
+6|java project|complete YouDo app|1|2023-12-07 12:46:07|Completed|2023-12-07 09:58:56
+7|complete the presentation|important|high|2023-12-10 12:10:54|Completed|2023-12-07 11:09:37
+9|date|add date ui|2|2023-12-08 12:51:20|Not Started|2023-12-07 12:51:40
+13|OOP Lab report|complete all experiments and do spiral binding|2|2023-12-11 11:08:13|Not Started|2023-12-08 11:11:56
+14|dsa presentation report|prepare a report of a real world application of any data structure and submit a soft copy|3|2023-12-17 11:08:13|Not Started|2023-12-08 11:13:07
+15|dsa lab report|hardcopy, 5 questions in each topic, plus those 3 along with time and memory analyisis. code can be printed, rest all handwritten.|1|2023-12-15 11:08:13|Not Started|2023-12-08 11:15:27
